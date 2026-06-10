@@ -1,0 +1,23 @@
+[package]
+name = "lancedbmojo"
+version = "0.1.0"
+edition = "2021"
+description = "C-ABI shim over the lancedb crate, for the lancedb.mojo Mojo binding."
+
+[lib]
+name = "lancedbmojo"
+# cdylib -> liblancedbmojo.dylib, loaded by Mojo via OwnedDLHandle (like the flare
+# TLS shim). staticlib is unused but cheap to keep for debugging.
+crate-type = ["cdylib"]
+
+[dependencies]
+# lancedb pulls arrow + datafusion + object_store. We construct Arrow batches with
+# the SAME arrow crates lancedb re-exports, so the types match across the boundary.
+lancedb = "0.30"
+arrow-array = "58"
+arrow-schema = "58"
+tokio = { version = "1", features = ["rt-multi-thread"] }
+futures = "0.3"
+
+[profile.release]
+opt-level = 2

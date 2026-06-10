@@ -1,0 +1,24 @@
+[workspace]
+name = "lancedb"
+version = "0.1.0"
+authors = ["Marius S <marius@seritan.net>"]
+description = "A Mojo LanceDB binding (vector add/search) via FFI to a Rust cdylib over the lancedb crate. The local vector store for headgate's vault search."
+# Org nightly — matches headgate/flare/zlib so this resolves via `-I` against the
+# same toolchain.
+channels = [
+    "https://conda.modular.com/max-nightly",
+    "conda-forge",
+]
+platforms = ["osx-arm64"]
+
+[dependencies]
+mojo = "==1.0.0b2.dev2026060706"
+
+[tasks]
+# Build the Rust FFI shim ($CONDA_PREFIX/lib/liblancedbmojo.dylib). Needs cargo on
+# PATH (rustup). First build pulls lancedb+arrow — slow; later builds are cached.
+ffi = "bash ffi/build.sh"
+# Round-trip gate: open a temp db, add vectors, search, assert the nearest id.
+# The shim is dlopened at runtime, so consumers just `-I ../lancedb.mojo/src` +
+# the built dylib (no link flags), exactly like zlib.mojo.
+test = { cmd = "mkdir -p build && mojo build src/lancedb_test.mojo -I src -o build/lancedb-test && ./build/lancedb-test", depends-on = ["ffi"] }
