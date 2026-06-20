@@ -1,11 +1,11 @@
 # lancedb.mojo
 
-> Part of [**millrace**](https://millrace.me) — local-first AI on Apple Silicon.
+> Part of [**millfolio**](https://millfolio.app) — local-first AI on Apple Silicon.
 
 A small **Mojo binding for [LanceDB](https://lancedb.com)** — open a local
 vector table, add `(id, vector)` rows, and run k-NN search — over a thin **Rust
 cdylib** that wraps the `lancedb` crate behind a C ABI. It's the on-device vector
-store for [headgate](https://github.com/millrace/headgate)'s **vault search**:
+store for [headgate](https://github.com/millfolio/headgate)'s **vault search**:
 the user's files are chunked, embedded locally, and indexed here so an
 open-ended question ("when do I renew my insurance?") can find the right passages
 — without any data leaving the machine.
@@ -13,8 +13,8 @@ open-ended question ("when do I renew my insurance?") can find the right passage
 ## Design
 
 LanceDB is Rust and its API is async (tokio). This repo exposes it to Mojo the
-same way [zlib.mojo](https://github.com/millrace/zlib.mojo) and
-[flare](https://github.com/millrace/flare) reach C libraries:
+same way [zlib.mojo](https://github.com/millfolio/zlib.mojo) and
+[flare](https://github.com/millfolio/flare) reach C libraries:
 
 - **`ffi/`** — a Rust `cdylib` (`ffi/src/lib.rs`) that re-exports a handful of
   `extern "C"` functions (`ldb_open`, `ldb_table`, `ldb_add`, `ldb_count`,
