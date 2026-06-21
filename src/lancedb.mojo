@@ -110,6 +110,51 @@ struct Store(Movable):
             )
         _add(self.lib, self.table, ids, vectors, n, self.dim)
 
+    def delete(self, predicate: String) raises:
+        """Delete rows matching a SQL `predicate` over the table columns, e.g.
+        `id >= 10 AND id < 20`. Tombstones the rows; call `optimize()` after a
+        batch of deletes to reclaim space. A missing table is a no-op."""
+        var pred_c = _cstr(predicate)
+        var f = self.lib.get_function[
+            def (Int, Int) thin abi("C") -> c_int
+        ]("ldb_delete")
+        var rc = f(self.table, Int(pred_c.unsafe_ptr()))
+        _ = pred_c^  # keep the buffer mapped across the C call
+        if Int(rc) != 0:
+            raise Error("lancedb.delete: " + _last_error(self.lib))
+
+    def delete_ids(self, ids: List[Int64]) raises:
+        """Delete the rows with these ids (builds an `id IN (...)` predicate).
+        Empty list is a no-op. Used to drop a file's chunks on re-index."""
+        if len(ids) == 0:
+            return
+        var pred = String("id IN (")
+        for i in range(len(ids)):
+            if i > 0:
+                pred += ","
+            pred += String(ids[i])
+        pred += ")"
+        self.delete(pred)
+
+    def optimize(self) raises:
+        """Compact fragments + purge tombstoned rows. Run after a batch of
+        deletes so storage/scan cost don't grow across re-index cycles."""
+        var f = self.lib.get_function[
+            def (Int) thin abi("C") -> c_int
+        ]("ldb_optimize")
+        if Int(f(self.table)) != 0:
+            raise Error("lancedb.optimize: " + _last_error(self.lib))
+
+    def create_index(self) raises:
+        """Build an ANN index on the vector column (auto type) for search at
+        scale. May error when there are too few rows to train an IVF index —
+        callers can catch that and stay brute-force until the vault grows."""
+        var f = self.lib.get_function[
+            def (Int) thin abi("C") -> c_int
+        ]("ldb_create_index")
+        if Int(f(self.table)) != 0:
+            raise Error("lancedb.create_index: " + _last_error(self.lib))
+
     def count(self) raises -> Int:
         """Number of rows in the table."""
         var func = self.lib.get_function[

@@ -20,7 +20,9 @@ use arrow_array::{
 };
 use arrow_schema::{DataType, Field, Schema};
 use futures::TryStreamExt;
+use lancedb::index::Index;
 use lancedb::query::{ExecutableQuery, QueryBase};
+use lancedb::table::OptimizeAction;
 use lancedb::{connect, Connection};
 use tokio::runtime::Runtime;
 
@@ -311,6 +313,112 @@ pub extern "C" fn ldb_search(
         Ok(w) => w as i32,
         Err(e) => {
             set_err(format!("ldb_search: {e}"));
+            -1
+        }
+    }
+}
+
+// ── delete / optimize / index ───────────────────────────────────────────────
+
+/// Delete rows matching a SQL `predicate` over the table's columns, e.g.
+/// "id >= 10 AND id < 20" or "id IN (1,2,3)". Returns 0 on success, -1 on error.
+/// A missing table is a no-op (0): there's nothing to delete yet.
+///
+/// LanceDB deletes are tombstones — call `ldb_optimize` to reclaim space and
+/// drop deleted rows from the fragments after a batch of deletes.
+#[no_mangle]
+pub extern "C" fn ldb_delete(tbl: *mut c_void, predicate: *const c_char) -> i32 {
+    if tbl.is_null() || predicate.is_null() {
+        set_err("ldb_delete: bad args".into());
+        return -1;
+    }
+    let tbl = unsafe { &*(tbl as *const Tbl) };
+    let pred = match unsafe { CStr::from_ptr(predicate) }.to_str() {
+        Ok(s) => s.to_owned(),
+        Err(_) => {
+            set_err("ldb_delete: predicate not utf-8".into());
+            return -1;
+        }
+    };
+    let res = rt().block_on(async {
+        if !table_exists(&tbl.conn, &tbl.name).await {
+            return Ok(());
+        }
+        tbl.conn
+            .open_table(&tbl.name)
+            .execute()
+            .await?
+            .delete(&pred)
+            .await
+            .map(|_| ())
+    });
+    match res {
+        Ok(_) => 0,
+        Err(e) => {
+            set_err(format!("ldb_delete: {e}"));
+            -1
+        }
+    }
+}
+
+/// Compact the table: merge small fragments and purge tombstoned (deleted) rows
+/// so storage and scan cost don't grow across re-index cycles. Returns 0 on
+/// success, -1 on error; a missing table is a no-op (0).
+#[no_mangle]
+pub extern "C" fn ldb_optimize(tbl: *mut c_void) -> i32 {
+    if tbl.is_null() {
+        set_err("ldb_optimize: null tbl".into());
+        return -1;
+    }
+    let tbl = unsafe { &*(tbl as *const Tbl) };
+    let res = rt().block_on(async {
+        if !table_exists(&tbl.conn, &tbl.name).await {
+            return Ok(());
+        }
+        tbl.conn
+            .open_table(&tbl.name)
+            .execute()
+            .await?
+            .optimize(OptimizeAction::All)
+            .await
+            .map(|_| ())
+    });
+    match res {
+        Ok(_) => 0,
+        Err(e) => {
+            set_err(format!("ldb_optimize: {e}"));
+            -1
+        }
+    }
+}
+
+/// Build an ANN index on the `vector` column (auto-selected type: IVF_PQ/HNSW per
+/// data size) so search scales past brute force. Returns 0 on success, -1 on
+/// error. Errors include "too few rows" (LanceDB needs enough rows to train an
+/// IVF index) — callers can treat that as "stay brute-force for now".
+#[no_mangle]
+pub extern "C" fn ldb_create_index(tbl: *mut c_void) -> i32 {
+    if tbl.is_null() {
+        set_err("ldb_create_index: null tbl".into());
+        return -1;
+    }
+    let tbl = unsafe { &*(tbl as *const Tbl) };
+    let res = rt().block_on(async {
+        if !table_exists(&tbl.conn, &tbl.name).await {
+            return Ok(());
+        }
+        tbl.conn
+            .open_table(&tbl.name)
+            .execute()
+            .await?
+            .create_index(&["vector"], Index::Auto)
+            .execute()
+            .await
+    });
+    match res {
+        Ok(_) => 0,
+        Err(e) => {
+            set_err(format!("ldb_create_index: {e}"));
             -1
         }
     }

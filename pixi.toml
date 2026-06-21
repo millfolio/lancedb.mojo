@@ -22,3 +22,5 @@ ffi = "bash ffi/build.sh"
 # The shim is dlopened at runtime, so consumers just `-I ../lancedb.mojo/src` +
 # the built dylib (no link flags), exactly like zlib.mojo.
 test = { cmd = "mkdir -p build && mojo build src/lancedb_test.mojo -I src -o build/lancedb-test && ./build/lancedb-test", depends-on = ["ffi"] }
+# Round-trip gate for delete + optimize: add, delete by id, compact, assert.
+test-delete = { cmd = "mkdir -p build && mojo build src/delete_test.mojo -I src -o build/delete-test && ./build/delete-test", depends-on = ["ffi"] }
