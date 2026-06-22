@@ -12,7 +12,7 @@ channels = [
 platforms = ["osx-arm64"]
 
 [dependencies]
-mojo = "==1.0.0b3.dev2026061206"
+mojo = "==1.0.0b3.dev2026062206"
 
 [tasks]
 # Build the Rust FFI shim ($CONDA_PREFIX/lib/liblancedbmojo.dylib). Needs cargo on
