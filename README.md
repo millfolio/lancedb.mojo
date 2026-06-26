@@ -1,5 +1,7 @@
 # lancedb.mojo
 
+> 💬 **Community:** questions, ideas, and show-and-tell live in [GitHub Discussions](https://github.com/millfolio/millfolio/discussions).
+
 > Part of [**millfolio**](https://millfolio.app) — local-first AI on Apple Silicon.
 
 A small **Mojo binding for [LanceDB](https://lancedb.com)** — open a local
