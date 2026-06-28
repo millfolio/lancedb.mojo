@@ -4,6 +4,11 @@ tags: ['mojo']
 
 tasks:
   check:
-    command: 'pixi run test'
+    command: 'pixi run test-all'
     toolchain: 'system'
-    inputs: ['src/**/*', 'ffi/**/*', 'pixi.toml', 'pixi.lock']
+    inputs: ['src/**/*', 'ffi/**/*', 'test/**/*', 'pixi.toml', 'pixi.lock']
+    # Serialize with vault:build — both run lancedb's ffi/build.sh, which writes the
+    # same liblancedbmojo.dylib; building it concurrently corrupts it (install_name_tool
+    # Bus error → "load command extends beyond end of file" dlopen failure).
+    options:
+      mutex: 'lancedb-shim'

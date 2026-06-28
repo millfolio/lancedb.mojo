@@ -12,7 +12,7 @@ channels = [
 platforms = ["osx-arm64"]
 
 [dependencies]
-mojo = "==1.0.0b3.dev2026062206"
+mojo = "==1.0.0b3.dev2026062706"
 
 [tasks]
 # Build the Rust FFI shim ($CONDA_PREFIX/lib/liblancedbmojo.dylib). Needs cargo on
@@ -21,6 +21,12 @@ ffi = "bash ffi/build.sh"
 # Round-trip gate: open a temp db, add vectors, search, assert the nearest id.
 # The shim is dlopened at runtime, so consumers just `-I ../lancedb.mojo/src` +
 # the built dylib (no link flags), exactly like zlib.mojo.
-test = { cmd = "mkdir -p build && mojo build test/lancedb_test.mojo -I src -o build/lancedb-test && ./build/lancedb-test", depends-on = ["ffi"] }
+# rm the test db first so the gate is idempotent (the db dir persists between runs;
+# a stale table breaks the row-count asserts — `expected 5 rows after add`). The rm
+# runs through real `bash` because pixi's task shell does not expand ${VAR:-default}
+# (the path must match the libc getenv the test binary uses).
+test = { cmd = "mkdir -p build && bash -c 'rm -rf \"${HOME:-.}/.cache/lancedb-mojo-test.db\"' && mojo build test/lancedb_test.mojo -I src -o build/lancedb-test && ./build/lancedb-test", depends-on = ["ffi"] }
 # Round-trip gate for delete + optimize: add, delete by id, compact, assert.
-test-delete = { cmd = "mkdir -p build && mojo build test/delete_test.mojo -I src -o build/delete-test && ./build/delete-test", depends-on = ["ffi"] }
+test-delete = { cmd = "mkdir -p build && bash -c 'rm -rf \"${TMPDIR:-/tmp}/lancedb_delete_test.db\"' && mojo build test/delete_test.mojo -I src -o build/delete-test && ./build/delete-test", depends-on = ["ffi"] }
+# Full suite — what `moon run lancedb:check` runs (both gates).
+test-all = { depends-on = ["test", "test-delete"] }
