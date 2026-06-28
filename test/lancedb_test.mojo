@@ -44,5 +44,7 @@ def main() raises:
     if len(rids) == 0:
         raise Error("FAIL: search returned no rows")
     if rids[0] != Int64(12):
-        raise Error("FAIL: nearest id = " + String(Int(rids[0])) + ", expected 12")
+        raise Error(
+            "FAIL: nearest id = " + String(Int(rids[0])) + ", expected 12"
+        )
     print("PASS: nearest neighbour is id 12")
