@@ -1,4 +1,4 @@
-"""lancedb — Mojo vector store (add / k-NN search) via a Rust cdylib shim.
+"""`lancedb` — Mojo vector store (add / k-NN search) via a Rust cdylib shim.
 
 Mirrors zlib.mojo's FFI pattern: a single relocatable library
 (ffi/src/lib.rs -> $CONDA_PREFIX/lib/liblancedbmojo.dylib, built by ffi/build.sh)
@@ -38,18 +38,21 @@ def _cstr(s: String) -> List[UInt8]:
     return b^
 
 
-def _last_error(imm lib: OwnedDLHandle) raises -> String:
+def _last_error(imm lib: OwnedDLHandle) -> String:
     """Read the shim's thread-local last-error C string (for diagnostics)."""
-    var func = lib.get_function[UnsafePointer[UInt8, MutAnyOrigin]](
-        "ldb_last_error"
-    )
-    var p = func()  # always a valid CString ptr (never null)
-    var out = String("")
-    var i = 0
-    while p[unsafe_offset=i] != 0 and i < 4096:
-        out += chr(Int(p[unsafe_offset=i]))
-        i += 1
-    return out^
+    try:
+        var func = lib.get_function[Pointer[UInt8, MutAnyOrigin]](
+            "ldb_last_error"
+        )
+        var p = func()  # always a valid CString ptr (never null)
+        var out = String("")
+        var i = 0
+        while p[unsafe_offset=i] != 0 and i < 4096:
+            out += chr(Int(p[unsafe_offset=i]))
+            i += 1
+        return out^
+    except:
+        return String("")  # shim symbol missing: no diagnostics available
 
 
 struct Store(Movable):
@@ -87,20 +90,15 @@ struct Store(Movable):
     def __deinit__(deinit self):
         # Free the LanceDB handles while `self.lib` is still mapped (fields are
         # destroyed after __del__ returns, so the binding stays valid here).
-        # get_function raises if the symbol is missing; a destructor can't
-        # propagate that, so treat a missing symbol as a no-op.
-        if self.table != 0:
-            try:
+        try:
+            if self.table != 0:
                 var f = self.lib.get_function[NoneType]("ldb_table_free")
                 f(self.table)
-            except:
-                pass
-        if self.conn != 0:
-            try:
+            if self.conn != 0:
                 var f = self.lib.get_function[NoneType]("ldb_conn_free")
                 f(self.conn)
-            except:
-                pass
+        except:
+            pass  # shim symbol missing: nothing to free through
 
     def add(self, ids: List[Int64], vectors: List[Float32]) raises:
         """Append rows: `ids[n]` and row-major `vectors[n*dim]`."""
@@ -169,7 +167,7 @@ struct Store(Movable):
     def search(
         self, query: List[Float32], k: Int
     ) raises -> Tuple[List[Int64], List[Float32]]:
-        """k-NN search; returns (ids, distances), nearest first, length <= k."""
+        """K-NN search; returns (ids, distances), nearest first, length <= k."""
         if len(query) != self.dim:
             raise Error(
                 "lancedb.search: query length "
