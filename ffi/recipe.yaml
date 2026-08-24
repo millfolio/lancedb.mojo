@@ -1,0 +1,22 @@
+# Builds the lancedb FFI shim as a conda artifact: cargo compiles the cdylib
+# and it installs into $PREFIX/lib, where the Mojo binding's _find_lib()
+# dlopens it. Replaces the old `pixi run ffi` shell-script step.
+package:
+  name: lancedb-shim
+  version: 0.1.1
+
+source:
+  - path: .
+    use_gitignore: true
+
+build:
+  number: 0
+  script:
+    - cargo build --release
+    - mkdir -p $PREFIX/lib
+    - cp target/release/liblancedbmojo.dylib $PREFIX/lib/liblancedbmojo.dylib
+    - install_name_tool -id "@rpath/liblancedbmojo.dylib" "$PREFIX/lib/liblancedbmojo.dylib"
+
+requirements:
+  build:
+    - rust

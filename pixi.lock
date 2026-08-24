@@ -56,6 +56,7 @@ environments:
       - conda: https://conda.modular.com/max-nightly/noarch/mojo-python-1.0.0-release.conda
       - conda: https://conda.modular.com/max-nightly/osx-arm64/mojo-1.0.0-release.conda
       - conda: https://conda.modular.com/max-nightly/osx-arm64/mojo-compiler-1.0.0-release.conda
+      - conda_source: lancedb-shim[c1a8db98] @ ffi
 packages:
 - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_2.conda
   sha256: a3967b937b9abf0f2a99f3173fa4630293979bd1644709d89580e7c62a544661
@@ -206,6 +207,18 @@ packages:
   license_family: BSD
   size: 6989
   timestamp: 1752805904792
+- conda: https://conda.anaconda.org/conda-forge/noarch/rust-std-aarch64-apple-darwin-1.97.1-hf6ec828_2.conda
+  sha256: 4c8d8196a40a2efc67bd30833a26021d7cb63484010399d60e1480247a4cf20c
+  md5: 3f475407918d3370fc089abe933614a0
+  depends:
+  - __unix
+  constrains:
+  - rust >=1.97.1,<1.97.2.0a0
+  license: MIT
+  license_family: MIT
+  run_exports: {}
+  size: 34722319
+  timestamp: 1787152311232
 - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhe01879c_1.conda
   sha256: 458227f759d5e3fcec5d9b7acce54e10c9e1f4f4b7ec978f3bfd54ce4ee9853d
   md5: 3339e3b65d58accf4ca4fb8748ab16b3
@@ -438,6 +451,16 @@ packages:
   license_family: GPL
   size: 313930
   timestamp: 1765813902568
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/rust-1.97.1-h4ff7c5d_2.conda
+  sha256: 5181f582c32bdd39926cd8eb03957d7eb355c32bac889b6dcbd3d91b839f3c66
+  md5: 4a33cc4400d259e297e60416cd4a8927
+  depends:
+  - rust-std-aarch64-apple-darwin 1.97.1 hf6ec828_2
+  license: MIT
+  license_family: MIT
+  run_exports: {}
+  size: 181267329
+  timestamp: 1787152435071
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/tk-8.6.13-h010d191_3.conda
   sha256: 799cab4b6cde62f91f750149995d149bc9db525ec12595e8a1d91b9317f038b3
   md5: a9d86bc62f39b94c4661716624eb21b0
@@ -529,3 +552,9 @@ packages:
   run_exports: {}
   size: 61221085
   timestamp: 1786294690001
+- conda_source: lancedb-shim[c1a8db98] @ ffi
+  variants:
+    target_platform: osx-arm64
+  build_packages:
+  - conda: https://conda.anaconda.org/conda-forge/noarch/rust-std-aarch64-apple-darwin-1.97.1-hf6ec828_2.conda
+  - conda: https://conda.anaconda.org/conda-forge/osx-arm64/rust-1.97.1-h4ff7c5d_2.conda

@@ -1,10 +1,11 @@
 [workspace]
 name = "lancedb"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Marius S <marius@seritan.net>"]
 description = "A Mojo LanceDB binding (vector add/search) via FFI to a Rust cdylib over the lancedb crate. The local vector store for headgate's vault search."
 # Org nightly — matches headgate/flare/zlib so this resolves via `-I` against the
 # same toolchain.
+preview = ["pixi-build"]
 channels = [
     "https://conda.modular.com/max-nightly",
     "conda-forge",
@@ -13,11 +14,11 @@ platforms = ["osx-arm64"]
 
 [dependencies]
 mojo = "==1.0.0"
+# The FFI shim is a pixi package (ffi/); pixi builds the Rust cdylib and
+# installs lib/liblancedbmojo.dylib into the env — no manual build step.
+lancedb-shim = { path = "ffi" }
 
 [tasks]
-# Build the Rust FFI shim ($CONDA_PREFIX/lib/liblancedbmojo.dylib). Needs cargo on
-# PATH (rustup). First build pulls lancedb+arrow — slow; later builds are cached.
-ffi = "bash ffi/build.sh"
 # Round-trip gate: open a temp db, add vectors, search, assert the nearest id.
 # The shim is dlopened at runtime, so consumers just `-I ../lancedb.mojo/src` +
 # the built dylib (no link flags), exactly like zlib.mojo.
@@ -25,8 +26,32 @@ ffi = "bash ffi/build.sh"
 # a stale table breaks the row-count asserts — `expected 5 rows after add`). The rm
 # runs through real `bash` because pixi's task shell does not expand ${VAR:-default}
 # (the path must match the libc getenv the test binary uses).
-test = { cmd = "mkdir -p build && bash -c 'rm -rf \"${HOME:-.}/.cache/lancedb-mojo-test.db\"' && mojo build test/lancedb_test.mojo -I src -o build/lancedb-test && ./build/lancedb-test", depends-on = ["ffi"] }
+test = { cmd = "mkdir -p build && bash -c 'rm -rf \"${HOME:-.}/.cache/lancedb-mojo-test.db\"' && mojo build test/lancedb_test.mojo -I src -o build/lancedb-test && ./build/lancedb-test" }
 # Round-trip gate for delete + optimize: add, delete by id, compact, assert.
-test-delete = { cmd = "mkdir -p build && bash -c 'rm -rf \"${TMPDIR:-/tmp}/lancedb_delete_test.db\"' && mojo build test/delete_test.mojo -I src -o build/delete-test && ./build/delete-test", depends-on = ["ffi"] }
+test-delete = { cmd = "mkdir -p build && bash -c 'rm -rf \"${TMPDIR:-/tmp}/lancedb_delete_test.db\"' && mojo build test/delete_test.mojo -I src -o build/delete-test && ./build/delete-test" }
 # Full suite — what `moon run lancedb:check` runs (both gates).
 test-all = { depends-on = ["test", "test-delete"] }
+
+# ── pixi-build: consumable as a pixi source dependency ──────────────────────
+# Conda package name is lancedb-mojo (the lancedb name belongs to the Python
+# package); the Mojo import stays `from lancedb import …`.
+[package]
+name = "lancedb-mojo"
+version = "0.1.1"
+
+[package.build]
+backend = { name = "pixi-build-mojo", version = "0.*" }
+
+[package.build.config.pkg]
+path = "src/lancedb"
+name = "lancedb"
+
+[package.host-dependencies]
+mojo-compiler = "==1.0.0"
+
+[package.build-dependencies]
+mojo-compiler = "==1.0.0"
+
+[package.run-dependencies]
+mojo-compiler = "==1.0.0"
+lancedb-shim = { path = "ffi" }
