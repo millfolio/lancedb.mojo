@@ -1,4 +1,4 @@
 name = "lancedb-mojo"
 version = "0.1.1"
-# other books this one depends on; omit if none
-books = []
+# other tins this one depends on; omit if none
+tins = []
