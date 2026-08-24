@@ -1,0 +1,4 @@
+name = "lancedb"
+version = "0.1.0"
+# other books this one depends on; omit if none
+books = []
