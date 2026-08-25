@@ -3,7 +3,7 @@
 # dlopens it. Replaces the old `pixi run ffi` shell-script step.
 package:
   name: lancedb-shim
-  version: 0.1.1
+  version: 0.1.2
 
 source:
   - path: .
@@ -20,3 +20,5 @@ build:
 requirements:
   build:
     - rust
+    # lance generates protobuf code via prost-build, which shells out to protoc.
+    - libprotobuf
