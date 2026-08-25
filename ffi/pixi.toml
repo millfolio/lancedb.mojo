@@ -1,6 +1,6 @@
 [package]
 name = "lancedb-shim"
-version = "0.1.3"
+version = "0.1.4"
 description = "Rust cdylib FFI shim for lancedb-mojo: liblancedbmojo.dylib, dlopened at runtime"
 
 [package.build]
