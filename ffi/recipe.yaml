@@ -3,7 +3,7 @@
 # dlopens it. Replaces the old `pixi run ffi` shell-script step.
 package:
   name: lancedb-shim
-  version: 0.1.2
+  version: 0.1.3
 
 source:
   - path: .

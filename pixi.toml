@@ -1,6 +1,6 @@
 [workspace]
 name = "lancedb"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Marius S <marius@seritan.net>"]
 description = "A Mojo LanceDB binding (vector add/search) via FFI to a Rust cdylib over the lancedb crate. The local vector store for headgate's vault search."
 # Org nightly — matches headgate/flare/zlib so this resolves via `-I` against the
@@ -10,7 +10,7 @@ channels = [
     "https://conda.modular.com/max-nightly",
     "conda-forge",
 ]
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "linux-64", "linux-aarch64"]
 
 [dependencies]
 mojo = "==1.0.0"
@@ -37,7 +37,7 @@ test-all = { depends-on = ["test", "test-delete"] }
 # package); the Mojo import stays `from lancedb import …`.
 [package]
 name = "lancedb-mojo"
-version = "0.1.3"
+version = "0.1.4"
 
 [package.build]
 backend = { name = "pixi-build-mojo", version = "0.*" }

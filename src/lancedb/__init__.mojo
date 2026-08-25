@@ -15,13 +15,14 @@ Headline use: headgate's `search(query, k)` over the personal-data vault.
 """
 
 from std.os import getenv
+from std.sys.info import CompilationTarget
 from std.ffi import OwnedDLHandle, c_int, c_char
 
 
 def _find_lib() -> String:
     """Path to liblancedbmojo.dylib: `$CONDA_PREFIX/lib` (built by ffi/build.sh),
     else `build/` for a bare checkout. Mirrors zlib.mojo._find_lib."""
-    var ext = String("dylib")  # macOS cdylib; ffi/build.sh emits .so on Linux
+    var ext = String("dylib") if CompilationTarget.is_macos() else String("so")
     var prefix = getenv("CONDA_PREFIX", "")
     if prefix == "":
         return String("build/liblancedbmojo.") + ext
