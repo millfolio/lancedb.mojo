@@ -1,5 +1,7 @@
 # lancedb.mojo
 
+[![mojoshelf](https://mojoshelf.org/badge/lancedb-mojo.svg)](https://mojoshelf.org/tins/lancedb-mojo) [![mojo nightly](https://mojoshelf.org/badge/lancedb-mojo/nightly.svg)](https://mojoshelf.org/tins/lancedb-mojo)
+
 > 💬 **Community:** questions, ideas, and show-and-tell live in [GitHub Discussions](https://github.com/millfolio/millfolio/discussions).
 
 > Part of [**millfolio**](https://millfolio.app) — local-first AI on Apple Silicon.
@@ -60,6 +62,18 @@ def main() raises:
     var ids = hits[0]
     var distances = hits[1]
 ```
+
+## Install as a mojoshelf tin
+
+Published on [mojoshelf](https://mojoshelf.org/tins/lancedb-mojo) as `lancedb-mojo`:
+
+```sh
+pixi shelf add lancedb-mojo     # pixi mode (builds the Rust shim + .mojopkg)
+shelf add lancedb-mojo          # or as a git submodule
+```
+
+Maintainers release new versions with `shelf publish` from the repo root
+(see [getting started](https://mojoshelf.org/getting-started)).
 
 ## API
 
